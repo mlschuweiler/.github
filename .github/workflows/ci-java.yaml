@@ -23,7 +23,7 @@ jobs:
       - name: Set up JDK ${{ inputs.java_version }}
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ inputs.java_version }}'
+          java-version: ${{ inputs.java_version }}
           distribution: 'corretto'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
