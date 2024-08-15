@@ -1,0 +1,48 @@
+name: 'CD: Deploy Pipeline'
+
+on:
+  workflow_call:
+    inputs:
+      config_file:
+        description: 'Configuration file driving pipeline setup'
+        default: '.github/config/deploy-environments.yaml'
+        type: string
+        required: false
+      terraform_version:
+        description: 'Terraform Version'
+        type: string
+        required: false
+
+jobs:
+  create_deploy_matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      dev_deploy_matrix: ${{ steps.parse_yaml_config.outputs.dev }}
+      prod_deploy_matrix: ${{ steps.parse_yaml_config.outputs.prod }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Parse Config File
+        id: parse_yaml_config
+        uses: christian-ci/action-yaml-github-output@v2
+        with:
+          file_path: ${{ inputs.config_file }}
+          format_type: simple_nested
+
+  deploy_dev:
+    needs: [ create_deploy_matrix ]
+    uses: mlschuweiler/.github/workflows/example-deploy-stage.yaml@main
+    secrets: inherit
+    with:
+      deploy_matrix: ${{ needs.create_deploy_matrix.outputs.dev_deploy_matrix }}
+      terraform_version: ${{ inputs.terraform_version }}
+    
+  deploy_prod:
+    needs: [ create_deploy_matrix, deploy_dev ]
+    uses: mlschuweiler/.github/workflows/example-deploy-stage.yaml@main
+    secrets: inherit
+    with:
+      deploy_matrix: ${{ needs.create_deploy_matrix.outputs.prod_deploy_matrix }}
+      terraform_version: ${{ inputs.terraform_version }}
